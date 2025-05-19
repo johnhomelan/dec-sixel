@@ -1,0 +1,22 @@
+{
+    "name": "homelan/dec-sixel",
+    "description": "Provides a class that produces the sixel terminal ouput needed to display a png|jepg|gif image",
+    "keywords": ["sixel", "VT200", "VT320", "VT330", "VT340" ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "John Brown",
+            "email": "packaging@home-lan.co.uk"
+        }
+    ],
+    "type": "project",
+    "require": {
+		"php": ">=8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "HomeLan\\Retro\\DEC\\Terminal\\Gfx\\": "src/"
+        }
+    }
+}
+
