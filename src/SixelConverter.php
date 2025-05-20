@@ -258,41 +258,51 @@ class SixelConverter {
         foreach ($this->aPalette as $iIndex => $aColor) {
             $sSixel .= "#$iIndex;" . $this->colorToSixel($aColor);
         }
+
+	// Create and empty dataset for each palette entry
+	$aBlankDataBlock = [];
+	$aBlankHasPixel = [];
+	for ($iColorIndex = 0; $iColorIndex < count($this->aPalette); $iColorIndex++) {
+		$aBlankDataBlock[$iColorIndex] = str_pad("",$iWidth,"?");
+		$aBlankHasPixel[$iColorIndex] = false;
+	}
+
         // Process image data
-        for ($iY = 0; $iY < $iPaddedHeight; $iY += 6) {
-            // For each color in the palette
-            for ($iColorIndex = 0; $iColorIndex < count($this->aPalette); $iColorIndex++) {
-                $bHasPixels = false;
-                $sSixelData = '';
-                
+        for ($iY = 0; $iY < $iPaddedHeight; $iY += 6){
+		//Reset the row data
+		$aCurretRowData = $aBlankDataBlock;
+		$aCurretRowHasPixel = $aBlankHasPixel;
                 // For each column
                 for ($iX = 0; $iX < $iWidth; $iX++) {
-                    $iValue = 0;
+		    $aBuffer = [];
                     
                     // Check 6 vertical pixels
                     for ($i = 0; $i < 6; $i++) {
                         $iYPos = $iY + $i;
-                        
+
+                        //Add the bit pattern for each palette index, we have encounterd  
                         if ($iYPos < $iHeight) {
                             $iPixel = imagecolorat($rQuantized, $iX, $iYPos);
-                            
-                            if ($iPixel  === $iColorIndex) {
-                                // Set the corresponding bit in the 6-bit value
-                                $iValue |= (1 << $i);
-                                $bHasPixels = true;
-                            }
+			    //Mark the palette entry for this row as having data 
+                            $aCurretRowHasPixel[$iPixel] = true;
+			    if(!array_key_exists($iPixel,$aBuffer)){
+				$aBuffer[$iPixel] = 0;
+			    }
+                            // Set the corresponding bit in the 6-bit value
+                            $aBuffer[$iPixel] |= (1 << $i);
                         }
                     }
-                    
-                    // Add the Sixel character
-                    $sSixelData .= $this->encodeSixelCharacter($iValue);
-                }
-                
+                    foreach($aBuffer as $iPaletteId => $iValue){
+                    	$aCurretRowData[$iPaletteId] = substr_replace($aCurretRowData[$iPaletteId],$this->encodeSixelCharacter($iValue),$iX,1);
+		    }
+       		}         
                 // Only output color data if there are pixels of this color in the current strip
-                if ($bHasPixels) {
-                    $sSixel .= "#".$iColorIndex.$sSixelData.'$';
+		foreach ($this->aPalette as $iIndex => $aColor) {
+			if($aCurretRowHasPixel[$iIndex]){
+				 $sSixel .= "#$iIndex" . $aCurretRowData[$iIndex].'$';
+			}
                 }
-            }
+
             
             // As this outputs one line per colour in the pallet, all the entries must end in '$' so each line over prints the previous entry. Expect the line for the final line which must end in '-' which tells the terminal to
             // begin a new on-screen line, with out over printing.  Other wise any image will only ever be 6pixels high on screen, as everthing would over print on the same line. As a pallet entry may not have any output for a given
