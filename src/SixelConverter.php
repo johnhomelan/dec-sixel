@@ -195,7 +195,8 @@ class SixelConverter {
         $iRed = (int)round($aColor['r'] * 100 / 255);
         $iGreen = (int)round($aColor['g'] * 100 / 255);
         $iBlue = (int)round($aColor['b'] * 100 / 255);
-        
+       
+ 	//The first param is the colour model (2 means rgb as %) 
         return "2;{$iRed};{$iGreen};{$iBlue}";
     }
     
@@ -230,7 +231,7 @@ class SixelConverter {
         $iPaddedHeight = (int)ceil($iHeight / 6) * 6;
         
         // Start Sixel output
-        $sSixel = "\033Pq";  // ESC P q - Enter Sixel mode
+        $sSixel = "\033P0;0;0q";  // ESC P q - Enter Sixel mode
         
         // Define the color palette
         foreach ($this->aPalette as $iIndex => $aColor) {
@@ -253,8 +254,6 @@ class SixelConverter {
                         
                         if ($iYPos < $iHeight) {
                             $iPixel = imagecolorat($rQuantized, $iX, $iYPos);
-                            //$aColorInfo = imagecolorsforindex($rQuantized, $iPixel);
-                            //$iPixelColorIndex = $aColorInfo['red'] & 0x7F;
                             
                             if ($iPixel  === $iColorIndex) {
                                 // Set the corresponding bit in the 6-bit value
@@ -270,7 +269,7 @@ class SixelConverter {
                 
                 // Only output color data if there are pixels of this color in the current strip
                 if ($bHasPixels) {
-                    $sSixel .= "#$iColorIndex;$sSixelData".'$';
+                    $sSixel .= "#".$iColorIndex.$sSixelData.'$';
                 }
             }
             
@@ -280,7 +279,9 @@ class SixelConverter {
             $sSixel = substr($sSixel,0, strlen($sSixel)-1)."-";
 	
         }
-        
+       	// Remove the lash char, that indicates what todo with the next line (as there is no next line)
+       	$sSixel = substr($sSixel,0, strlen($sSixel)-1); 
+
         // End Sixel output
         $sSixel .= "\033\\";  // ESC \ - Exit Sixel mode
         
