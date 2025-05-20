@@ -39,6 +39,11 @@ class SixelConverter {
      * @var array<int, array{r: int, g: int, b: int}>
      */
     protected array $aPalette = [];
+
+    /**
+     * Sets if run length encoding is enabled or not
+     */  
+    protected bool $bRunlengthEncoding = false;
     
     /**
      * Constructor
@@ -69,6 +74,22 @@ class SixelConverter {
      */
     public function setColorCount(int $iCount): self {
         $this->iColorCount = min(256, max(2, $iCount));
+        return $this;
+    }
+
+    /**
+     * Sets runlength encoding enabled
+     */
+    public function enableRunlengthEncoding(): self {
+        $this->bRunlengthEncoding = true;
+        return $this;
+    }
+
+    /**
+     * Sets runlength encoding disabled (the default)
+     */
+    public function disableRunlengthEncoding(): self {
+        $this->bRunlengthEncoding = false;
         return $this;
     }
     
@@ -234,6 +255,9 @@ class SixelConverter {
      * a line that has those repeated patterns replaced with a run length encode version
      */ 	
     protected function runLengthEncodeRow(string $sRow): string {
+	if(!$this->bRunlengthEncoding){
+          return $sRow;
+	}
 	$sReturn = "";
 	$sLast = "";
 	$iCount = 0;
@@ -244,25 +268,24 @@ class SixelConverter {
 
 	  // If the char has changed 
 	  if($sCurrent != $sLast){
-		switch($iCount){
-		  case 0:
-		    break;
-		  case 1: 
-		    $sReturn .= $sLast;
-		    break;
-		  case 2:
-		    $sReturn .= $sLast.$sLast;
-		    break;
-		  case 3:
-		     $sReturn .= $sLast.$sLast.$sLast;
-		     break;
-		  default:
-		    //At 4 or more repitions we either break even, or win with run length enconding 
-		    $sReturn .= '!'.$iCount.$sLast;
-		}
-		$iCount=0;
+ 	    switch($iCount){
+	      case 0:
+	        break;
+	      case 1: 
+	        $sReturn .= $sLast;
+	        break;
+	      case 2:
+	        $sReturn .= $sLast.$sLast;
+	        break;
+	      case 3:
+	        $sReturn .= $sLast.$sLast.$sLast;
+	        break;
+	      default:
+	        //At 4 or more repitions we either break even, or win with run length enconding 
+	        $sReturn .= '!'.$iCount.$sLast;
+	    }
+	    $iCount=0;
 	  }
-	  // There is a new run
 	  $iCount++;
 	  $sLast = $sCurrent;
 	}
