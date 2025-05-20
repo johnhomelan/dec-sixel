@@ -228,6 +228,46 @@ class SixelConverter {
         // Sixel characters start at ASCII 63 ('?')
         return chr(63 + ($iValue & 0x3F));
     }
+
+    /**
+     * Takes a single row palette entry looks for repeated pixel patterns, and returns
+     * a line that has those repeated patterns replaced with a run length encode version
+     */ 	
+    protected function runLengthEncodeRow(string $sRow): string {
+	$sReturn = "";
+	$sLast = "";
+	$iCount = 0;
+
+	//Step over the string char by char 
+	for($i=0; $i<strlen($sRow); $i++){
+	  $sCurrent = $sRow[$i];
+
+	  // If the char has changed 
+	  if($sCurrent != $sLast){
+		switch($iCount){
+		  case 0:
+		    break;
+		  case 1: 
+		    $sReturn .= $sLast;
+		    break;
+		  case 2:
+		    $sReturn .= $sLast.$sLast;
+		    break;
+		  case 3:
+		     $sReturn .= $sLast.$sLast.$sLast;
+		     break;
+		  default:
+		    //At 4 or more repitions we either break even, or win with run length enconding 
+		    $sReturn .= '!'.$iCount.$sLast;
+		}
+		$iCount=0;
+	  }
+	  // There is a new run
+	  $iCount++;
+	  $sLast = $sCurrent;
+	}
+	return  $sReturn;
+    }
     
     /**
      * Improved version of toSixel() with proper pixel to Sixel encoding
@@ -299,7 +339,7 @@ class SixelConverter {
                 // Only output color data if there are pixels of this color in the current strip
 		foreach ($this->aPalette as $iIndex => $aColor) {
 			if($aCurretRowHasPixel[$iIndex]){
-				 $sSixel .= "#$iIndex" . $aCurretRowData[$iIndex].'$';
+				 $sSixel .= "#$iIndex" .$this->runLengthEncodeRow($aCurretRowData[$iIndex]).'$';
 			}
                 }
 
