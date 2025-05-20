@@ -115,7 +115,28 @@ class SixelConverter {
         
         return $this;
     }
-    
+	
+    /**
+     * Set the image from a binary string containg an image in JPEG/PNG/GIF format
+     *
+     * @throws \Exception If the image cannot be loaded
+     */  	
+    public function setImage(string $sImageData): self
+    {
+        // Free any existing image resource
+        if ($this->rImage !== null) {
+            imagedestroy($this->rImage);
+            $this->rImage = null;
+        }
+
+	$this->rImage = imagecreatefromstring($sImageData);
+        if ($this->rImage === false) {
+            throw new \Exception("Failed to load image from data");
+        }
+        
+        return $this;
+    }
+
     /**
      * Resize the image to fit within the maximum dimensions while preserving aspect ratio
      */
